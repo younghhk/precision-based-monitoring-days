@@ -1,4 +1,3 @@
-# precision-based-monitoring-days
 
 This repository provides an R implementation of a **precision-based design criterion** for selecting the number of monitoring days required to estimate population-level outcomes with a prespecified level of accuracy. The method is described in detail in the accompanying manuscript.
 

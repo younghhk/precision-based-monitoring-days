@@ -1,29 +1,21 @@
-
 This repository provides an R implementation of a **precision-based design criterion** for selecting the number of monitoring days required to estimate population-level outcomes with a prespecified level of accuracy. The method is described in detail in the accompanying manuscript.
 
-The primary goal is to support **study design and planning** for accelerometer-based (and similar) studies by translating empirically estimated variability into guidance on how many days of monitoring are needed.
+The goal is to support **study design and planning** for accelerometer-based (and similar) studies by translating empirically estimated variability into guidance on how many days of monitoring are needed.
 
 ---
 
 ## Overview
 
-The approach targets the precision of the estimated **population mean** by evaluating the variance
-\[
-\mathrm{Var}(\hat{\mu}) = \frac{1}{N}\left(\sigma_b^2 + \frac{\sigma_w^2}{k}\right),
-\]
-where:
-- \(\sigma_b^2\) is the between-person variance,
-- \(\sigma_w^2\) is the within-person (day-to-day) variance,
-- \(N\) is the number of participants, and
-- \(k\) is the number of observed days per participant.
+The approach focuses on the precision of the estimated **population mean**. Specifically, it evaluates how the variance of the estimated mean depends on:
+
+- between-person variability,
+- within-person (day-to-day) variability,
+- the number of participants, and
+- the number of observed days per participant.
+
+Under a simple variance-components framework, the variance of the estimated population mean decreases as more days are averaged per participant. The required number of monitoring days is defined as the smallest value that achieves a user-specified precision target.
 
 When the number of observed days varies across participants, the method uses the **harmonic mean** of observed days to account for unequal contributions.
-
-The required number of monitoring days, denoted \(k^\star\), is defined as the smallest value that satisfies a prespecified precision criterion:
-\[
-1.96 \sqrt{\mathrm{Var}(\hat{\mu})} \le h,
-\]
-where \(h\) is a user-defined tolerance for the half-width of a nominal 95% confidence interval.
 
 ---
 
@@ -31,28 +23,28 @@ where \(h\) is a user-defined tolerance for the half-width of a nominal 95% conf
 
 ### `compute_k_star()`
 
-This function evaluates whether a given set of observed monitoring days achieves the desired precision and returns the effective number of days implied by the data.
+This function evaluates whether the observed monitoring-day structure achieves a desired level of precision and returns the effective number of days implied by the data.
 
 #### Arguments
 
 - `sigma_b2`  
-  Estimated between-person variance (\(\sigma_b^2\)).
+  Estimated between-person variance.
 
 - `sigma_w2`  
-  Estimated within-person variance (\(\sigma_w^2\)).
+  Estimated within-person (day-to-day) variance.
 
 - `N`  
   Number of participants contributing at least one observed day.
 
 - `k_obs`  
-  A vector giving the number of observed days for each participant.  
-  When days vary across participants, the harmonic mean of `k_obs` is used.
+  A numeric vector giving the number of observed days for each participant.  
+  When days vary across participants, the harmonic mean of this vector is used.
 
 - `h`  
-  Precision tolerance (half-width of a nominal 95% confidence interval).
+  Precision tolerance, defined as the maximum acceptable half-width of a nominal 95% confidence interval for the population mean.
 
 - `alpha` (optional, default = 0.05)  
-  Significance level for the confidence interval.
+  Significance level used to define the confidence interval.
 
 ---
 
@@ -73,3 +65,4 @@ compute_k_star(
   k_obs = k_obs,
   h = h
 )
+

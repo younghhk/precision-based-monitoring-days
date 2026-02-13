@@ -99,7 +99,7 @@ fit_cont <- lmer(
 result_cont <- compute_k_star(
   model = fit_cont,
   outcome_type = "continuous",
-  N = 1000,
+  N = length(unique(mydata1$id)),
   h = 0.1,
   id_var = "id",
   day_var = "day"
@@ -129,7 +129,7 @@ fit_cont <- lmer(
 result_cont <- compute_k_star(
   model = fit_cont2,
   outcome_type = "continuous",
-  N = 1000,
+  N = length(unique(mydata2$id)),
   h = 0.1,
   id_var = "id",
   day_var = "day",

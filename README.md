@@ -91,22 +91,29 @@ In short monitoring windows (e.g., 7 consecutive days), this adjustment typicall
 ### Example 1: Continuous Outcome (Primary Method)
 
 ```r
-library(lme4)
-
-# Fit linear mixed model
-fit <- lmer(sleep_duration ~ season + (1 | id), data = mydata)
-
-result <- compute_k_star(
-  model = fit,
-  outcome_type = "continuous",
-  N = length(unique(mydata$id)),
-  h = 0.25,
-  id_var = "id",
-  day_var = "day",
-  k_max = 7
+fit_cont <- lmer(
+  sleep_duration ~ season + (1 | id),
+  data = mydata1
 )
 
-result
+result_cont <- compute_k_star(
+  model = fit_cont,
+  outcome_type = "continuous",
+  N = 1000,
+  h = 0.1,
+  id_var = "id",
+  day_var = "day"
+)
+
+
+result_cont
+
+Precision-Based Monitoring Evaluation
+---------------------------------------
+Outcome type: continuous 
+Sample size (N): 1000 
+Tolerance (h): 0.1 
+Required monitoring days (k*): 3 
 ```
 
 ---
@@ -114,18 +121,31 @@ result
 ### Example 2: Continuous Outcome with Autocorrelation Sensitivity
 
 ```r
-result_adj <- compute_k_star(
-  model = fit,
+fit_cont <- lmer(
+  sleep_duration ~ season + (1 | id),
+  data = mydata2
+)
+
+result_cont <- compute_k_star(
+  model = fit_cont2,
   outcome_type = "continuous",
-  N = length(unique(mydata$id)),
-  h = 0.25,
+  N = 1000,
+  h = 0.1,
   id_var = "id",
   day_var = "day",
-  k_max = 7,
+  data = mydata2,
   adjust_autocorrelation = TRUE
 )
 
-result_adj
+result_cont
+
+Precision-Based Monitoring Evaluation
+---------------------------------------
+Outcome type: continuous 
+Sample size (N): 1000 
+Tolerance (h): 0.1 
+Lag-1 residual correlation: 0.127 
+Required monitoring days (k*): 4 
 ```
 
 ---
@@ -135,21 +155,27 @@ result_adj
 ```r
 fit_bin <- glmer(
   slept_7h ~ season + (1 | id),
-  data = mydata,
+  data = mydata3,
   family = binomial
 )
 
 result_bin <- compute_k_star(
   model = fit_bin,
   outcome_type = "binary",
-  N = length(unique(mydata$id)),
-  h = 0.02,   # 2 percentage-point tolerance
+  N = length(unique(mydata3$id)),
+  h = 0.02,
   id_var = "id",
-  day_var = "day",
-  k_max = 7
+  day_var = "day"
 )
 
 result_bin
+
+Precision-Based Monitoring Evaluation
+---------------------------------------
+Outcome type: binary 
+Sample size (N): 1000 
+Tolerance (h): 0.02 
+Required monitoring days (k*): 3 
 ```
 
 ---

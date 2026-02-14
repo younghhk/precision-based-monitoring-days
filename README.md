@@ -1,28 +1,56 @@
 # Precision-Based Monitoring Days
 
-This repository provides an R implementation of a **precision-based design criterion** for selecting the number of monitoring days required to estimate population-level outcomes with a prespecified level of accuracy. The method is described in detail in the accompanying manuscript.
+This repository provides an R implementation of a **precision-based rule** for determining the number of monitoring days required to estimate population-level outcomes with a prespecified level of accuracy.
 
-The goal is to support **study design and planning** for accelerometer-based (and similar repeated-measures) studies by translating empirically estimated variability into guidance on how many days of monitoring are needed.
+The method translates empirically estimated variability from a mixed-effects model into a practical recommendation for the required number of monitoring days per participant.
+
+This tool is intended to support **study design and planning** for accelerometer-based and other repeated-measures studies.
 
 ---
 
 ## Overview
 
-The approach focuses on the precision of the estimated **population mean**. Specifically, it evaluates how the variance of the estimated mean depends on:
+The method focuses on the precision of the estimated **population mean** (or prevalence for binary outcomes). Specifically, it determines the smallest number of monitoring days per participant required to achieve a user-specified confidence interval half-width.
 
-* between-person variability,
-* within-person (day-to-day) variability,
-* the number of participants, and
-* the number of observed days per participant.
+Under a variance-components framework, the variance of the estimated population mean depends on:
 
-Under a variance-components framework, the variance of the estimated population mean decreases as more days are averaged per participant. The required number of monitoring days is defined as the smallest value that achieves a user-specified precision target (i.e., a maximum acceptable half-width of a 95% confidence interval).
+* Between-person variability
+* Within-person (day-to-day) variability
+* Total sample size (number of participants)
+* Number of monitoring days per participant
 
-### Key Features
+The required monitoring duration, denoted ( k^\star ), is defined as the smallest integer ( k ) such that the estimated half-width of a nominal 95% confidence interval does not exceed a prespecified tolerance ( h ).
 
-* Works for **continuous outcomes** (linear mixed-effects models via `lmer`)
-* Works for **binary outcomes** (logistic mixed-effects models via `glmer`)
-* Handles unequal monitoring days across participants (via harmonic mean logic in the manuscript)
-* Optional sensitivity adjustment for **within-person lag-1 autocorrelation** in consecutive monitoring days
+---
+
+## Key Features
+
+* Works for **continuous outcomes** via `lmer` (linear mixed-effects models)
+* Works for **binary outcomes** via `glmer` (logistic mixed-effects models)
+* Uses empirically estimated variance components from fitted models
+* Optional sensitivity adjustment for **lag-1 within-person autocorrelation**
+* Simple interface for applied researchers
+
+---
+
+## Modeling Framework
+
+The primary method assumes a random-intercept mixed-effects model:
+
+* Daily observations are conditionally independent given participant-level random effects.
+* Correlation across days arises naturally through the participant random intercept.
+
+The design rule assumes a planned study with equal monitoring days per participant. Estimated variance components from existing data are used to determine the required monitoring duration.
+
+### Optional Autocorrelation Adjustment
+
+If short-term persistence remains after accounting for random intercepts (e.g., AR(1) structure), an optional sensitivity analysis estimates an effective number of monitoring days:
+
+```
+k_eff = k / design_effect
+```
+
+This adjustment is most relevant for consecutive-day monitoring protocols.
 
 ---
 
@@ -30,12 +58,12 @@ Under a variance-components framework, the variance of the estimated population 
 
 ### `compute_k_star()`
 
-This function computes the required number of monitoring days (`k*`) based on a fitted mixed-effects model and a user-specified precision tolerance.
+Computes the required number of monitoring days (`k*`) to achieve a prespecified precision target.
 
 ### Arguments
 
 * `model`
-  A fitted mixed-effects model (`lmerMod` for continuous outcomes or `glmerMod` for binary outcomes).
+  A fitted mixed-effects model (`lmerMod` or `glmerMod`).
 
 * `outcome_type`
   `"continuous"` or `"binary"`.
@@ -44,76 +72,58 @@ This function computes the required number of monitoring days (`k*`) based on a 
   Number of participants contributing at least one observed day.
 
 * `h`
-  Precision tolerance. Defined as the maximum acceptable half-width of a nominal 95% confidence interval for the population mean.
+  Precision tolerance. Defined as the maximum acceptable half-width of a 95% confidence interval.
 
 * `id_var`
   Name of the participant ID variable (character string).
 
 * `day_var`
-  Name of the day variable used to determine ordering (character string).
+  Name of the day variable (used for ordering residuals when estimating autocorrelation).
 
 * `k_max` (default = 14)
-  Maximum number of monitoring days to evaluate.
+  Maximum number of monitoring days evaluated.
 
 * `adjust_autocorrelation` (default = `FALSE`)
-  If `TRUE`, applies an AR(1)-based effective-days adjustment using estimated lag-1 residual autocorrelation.
-  This is intended as a **sensitivity analysis**.
+  If `TRUE`, applies an AR(1)-based effective-days adjustment as a sensitivity analysis.
 
 * `n_sim` (binary models only; default = 5000)
-  Number of Monte Carlo samples used to estimate marginal prevalence.
-
----
-
-## Modeling Assumptions
-
-The primary method assumes:
-
-* A random-intercept mixed-effects model
-* Conditional independence of daily residuals after accounting for:
-
-  * participant-level random effects
-  * fixed effects (e.g., season, day-of-week)
-
-Daily observations are **not assumed independent** overall — correlation across days arises naturally through the participant random intercept.
-
-If consecutive monitoring days exhibit additional short-term persistence (e.g., lag-1 autocorrelation), the optional adjustment estimates an effective number of monitoring days:
-
-```
-k_eff = k / design_effect
-```
-
-In short monitoring windows (e.g., 7 consecutive days), this adjustment typically has modest impact but provides a principled sensitivity analysis.
+  Number of Monte Carlo draws used to estimate marginal prevalence.
 
 ---
 
 ## Example Usage
 
-### Example 1: Continuous Outcome (Primary Method)
+### Example 1: Continuous Outcome
 
 ```r
+library(lme4)
+
 fit_cont <- lmer(
   sleep_duration ~ season + (1 | id),
-  data = mydata1
+  data = mydata
 )
 
 result_cont <- compute_k_star(
   model = fit_cont,
   outcome_type = "continuous",
-  N = length(unique(mydata1$id)),
-  h = 0.1,
+  N = length(unique(mydata$id)),
+  h = 0.10,
   id_var = "id",
   day_var = "day"
 )
 
-
 result_cont
+```
 
+Example output:
+
+```
 Precision-Based Monitoring Evaluation
 ---------------------------------------
-Outcome type: continuous 
-Sample size (N): 1000 
-Tolerance (h): 0.1 
-Required monitoring days (k*): 3 
+Outcome type: continuous
+Sample size (N): 1000
+Tolerance (h): 0.10
+Required monitoring days (k*): 3
 ```
 
 ---
@@ -121,61 +131,52 @@ Required monitoring days (k*): 3
 ### Example 2: Continuous Outcome with Autocorrelation Sensitivity
 
 ```r
-fit_cont <- lmer(
-  sleep_duration ~ season + (1 | id),
-  data = mydata2
-)
-
-result_cont <- compute_k_star(
-  model = fit_cont2,
+result_cont_adj <- compute_k_star(
+  model = fit_cont,
   outcome_type = "continuous",
-  N = length(unique(mydata2$id)),
-  h = 0.1,
+  N = length(unique(mydata$id)),
+  h = 0.10,
   id_var = "id",
   day_var = "day",
-  data = mydata2,
   adjust_autocorrelation = TRUE
 )
 
-result_cont
+result_cont_adj
+```
 
+Example output:
+
+```
 Precision-Based Monitoring Evaluation
 ---------------------------------------
-Outcome type: continuous 
-Sample size (N): 1000 
-Tolerance (h): 0.1 
-Lag-1 residual correlation: 0.127 
-Required monitoring days (k*): 4 
+Outcome type: continuous
+Sample size (N): 1000
+Tolerance (h): 0.10
+Lag-1 residual correlation: 0.127
+Required monitoring days (k*): 4
 ```
 
 ---
 
-### Example 3: Binary Outcome (Primary Method)
+### Example 3: Binary Outcome
 
 ```r
 fit_bin <- glmer(
   slept_7h ~ season + (1 | id),
-  data = mydata3,
+  data = mydata,
   family = binomial
 )
 
 result_bin <- compute_k_star(
   model = fit_bin,
   outcome_type = "binary",
-  N = length(unique(mydata3$id)),
+  N = length(unique(mydata$id)),
   h = 0.02,
   id_var = "id",
   day_var = "day"
 )
 
 result_bin
-
-Precision-Based Monitoring Evaluation
----------------------------------------
-Outcome type: binary 
-Sample size (N): 1000 
-Tolerance (h): 0.02 
-Required monitoring days (k*): 3 
 ```
 
 ---
@@ -184,23 +185,13 @@ Required monitoring days (k*): 3
 
 The function returns:
 
-* Estimated variance components (continuous) or prevalence/ICC (binary)
-* Optional lag-1 autocorrelation estimate (if requested)
-* Effective number of monitoring days (if adjusted)
+* Estimated variance components (continuous outcome)
+* Estimated marginal prevalence and ICC (binary outcome)
+* Optional lag-1 residual correlation (if requested)
 * Required number of monitoring days (`k*`)
 
-If no value ≤ `k_max` satisfies the precision criterion, `k*` is returned as `NA`.
+If no value less than or equal to `k_max` satisfies the precision constraint, `k*` is returned as `NA`.
 
----
-
-## Supplementary Materials
-
-The accompanying manuscript provides full derivations for:
-
-* Continuous outcomes under a variance-components model
-* Binary outcomes under a logistic mixed-effects model
-* Harmonic mean adjustment for unequal monitoring days
-* Effective-days adjustment for serial correlation
 
 ---
 
@@ -208,6 +199,6 @@ The accompanying manuscript provides full derivations for:
 
 If you use this code, please cite:
 
-> Hong, H.G. & Matthews, C. (2026).
-> *A Precision-Based Approach to Determining Accelerometer Monitoring Duration for Population Surveillance.*
+Hong, H.G. & Matthews, C. (2026).
+*A Precision-Based Approach to Determining Accelerometer Monitoring Duration for Population Surveillance.*
 

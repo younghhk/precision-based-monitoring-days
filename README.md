@@ -19,19 +19,11 @@ Under a variance-components framework, the variance of the estimated population 
 * Total sample size (number of participants)
 * Number of monitoring days per participant
 
-The required monitoring duration, denoted ( k^\star ), is defined as the smallest integer ( k ) such that the estimated half-width of a nominal 95% confidence interval does not exceed a prespecified tolerance ( h ).
+The required monitoring duration (k*) is the smallest number of monitoring days per participant needed so that the half-width of a 95% confidence interval does not exceed a user-specified tolerance (h).
 
 ---
 
-## Key Features
 
-* Works for **continuous outcomes** via `lmer` (linear mixed-effects models)
-* Works for **binary outcomes** via `glmer` (logistic mixed-effects models)
-* Uses empirically estimated variance components from fitted models
-* Optional sensitivity adjustment for **lag-1 within-person autocorrelation**
-* Simple interface for applied researchers
-
----
 
 ## Modeling Framework
 

@@ -1,10 +1,13 @@
 # Precision-Based Monitoring Days
 
-This repository provides an R implementation of a **precision-based rule** for determining the number of monitoring days required to estimate population-level outcomes with a prespecified level of accuracy.
 
-The method translates empirically estimated variability from a mixed-effects model into a practical recommendation for the required number of monitoring days per participant.
+This repository provides an R implementation of a precision-based rule for determining the number of monitoring days required per participant to achieve a desired level of accuracy when estimating a population mean or prevalence.
 
-This tool is intended to support **study design and planning** for accelerometer-based and other repeated-measures studies.
+Using variance components estimated from existing data (e.g., pilot studies or large observational cohorts), the method addresses a practical design question:
+
+Given the observed between-person and day-to-day variability, how many monitoring days are needed per participant so that the 95% confidence interval for the population estimate is sufficiently narrow?
+
+This tool is intended to support study design and protocol decisions in accelerometer-based and other repeated-measures research settings.
 
 ---
 
@@ -192,5 +195,5 @@ If no value less than or equal to `k_max` satisfies the precision constraint, `k
 If you use this code, please cite:
 
 Hong, H.G. & Matthews, C. (2026).
-*A Precision-Based Approach to Determining Accelerometer Monitoring Duration for Population Surveillance.*
+*A Statistical Framework for Determining Monitoring Duration in Population Surveillance*
 

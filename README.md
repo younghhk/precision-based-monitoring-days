@@ -100,10 +100,10 @@ These simplified functions allow direct computation of k* when variance componen
 
 ```r
 result_cont <- compute_k_star_continuous(
-  N = 100,
-  h = 0.10,
-  sigma_b2 = 0.5,
-  sigma_w2 = 1.0,
+  N = 200,
+  h = 0.5,
+  sigma_b2 = 1,
+  sigma_w2 = 1.9,
   phi = 0,
   k_max = 14
 )
@@ -112,24 +112,24 @@ result_cont <- compute_k_star_continuous(
 **Example output:**
 ```
 === Precision-Based Monitoring Days (Continuous Outcome) ===
-Sample size (N): 100
-Desired precision (h): 0.1
-Between-person variance (σ²_b): 0.5
-Within-person variance (σ²_w): 1
+Sample size (N): 100 
+Desired precision (h): 0.2 
+Between-person variance (σ²_b): 0.5 
+Within-person variance (σ²_w): 1 
 
-Required monitoring days (k*): 7
+Required monitoring days (k*): 2 
 
 Note: margin_of_error is the ±CI half-width achieved at each k.
       k* is the minimum k where margin_of_error ≤ h.
 
     k margin_of_error meets_tolerance
-1   1       0.2400500          FALSE
-2   2       0.1697056          FALSE
-3   3       0.1385641          FALSE
-4   4       0.1200250          FALSE
-5   5       0.1073313          FALSE
-6   6       0.0980297          TRUE
-7   7       0.0907376          TRUE
+1   1       0.2400500           FALSE
+2   2       0.1960000            TRUE
+3   3       0.1789227            TRUE
+4   4       0.1697410            TRUE
+5   5       0.1639854            TRUE
+6   6       0.1600333            TRUE
+7   7       0.1571496            TRUE
 ...
 ```
 
@@ -141,10 +141,10 @@ Note: margin_of_error is the ±CI half-width achieved at each k.
 
 ```r
 result_cont_adj <- compute_k_star_continuous(
-  N = 100,
+  N = 200,
   h = 0.10,
-  sigma_b2 = 0.5,
-  sigma_w2 = 1.0,
+  sigma_b2 = 0.3,
+  sigma_w2 = 0.8,
   phi = 0.3,  # Estimated from pilot data or literature
   k_max = 14
 )
@@ -153,21 +153,26 @@ result_cont_adj <- compute_k_star_continuous(
 **Example output:**
 ```
 === Precision-Based Monitoring Days (Continuous Outcome) ===
-Sample size (N): 100
-Desired precision (h): 0.1
-Between-person variance (σ²_b): 0.5
-Within-person variance (σ²_w): 1
-Lag-1 autocorrelation (φ): 0.3
+Sample size (N): 200 
+Desired precision (h): 0.1 
+Between-person variance (σ²_b): 0.3 
+Within-person variance (σ²_w): 0.8 
+Lag-1 autocorrelation (φ): 0.3 
 
-Required monitoring days (k*): 9
+Required monitoring days (k*): 6 
 
 Note: margin_of_error is the ±CI half-width achieved at each k.
       k* is the minimum k where margin_of_error ≤ h.
 
     k margin_of_error meets_tolerance
-1   1       0.2400500          FALSE
-2   2       0.1886953          FALSE
-3   3       0.1685423          FALSE
+1   1      0.14535749           FALSE
+2   2      0.12550124           FALSE
+3   3      0.11506830           FALSE
+4   4      0.10830663           FALSE
+5   5      0.10353313           FALSE
+6   6      0.09998190            TRUE
+7   7      0.09723828            TRUE
+8   8      0.09505587            TRUE
 ...
 ```
 
@@ -189,22 +194,31 @@ result_bin <- compute_k_star_binary(
 **Example output:**
 ```
 === Precision-Based Monitoring Days (Binary Outcome) ===
-Sample size (N): 100
-Desired precision (h): 0.05
-Marginal prevalence (μ): 0.3
-Intraclass correlation (ρ): 0.25
+Sample size (N): 100 
+Desired precision (h): 0.05 
+Marginal prevalence (μ): 0.3 
+Intraclass correlation (ρ): 0.25 
 
-Required monitoring days (k*): 5
+Required monitoring days (k*): 13 
 
 Note: margin_of_error is the ±CI half-width achieved at each k.
       k* is the minimum k where margin_of_error ≤ h.
 
     k margin_of_error meets_tolerance
-1   1      0.08977724          FALSE
-2   2      0.06347467          FALSE
-3   3      0.05182954          FALSE
-4   4      0.04488862          TRUE
-5   5      0.04016623          TRUE
+1   1      0.08981848           FALSE
+2   2      0.07100775           FALSE
+3   3      0.06351126           FALSE
+4   4      0.05940934           FALSE
+5   5      0.05680620           FALSE
+6   6      0.05500236           FALSE
+7   7      0.05367681           FALSE
+8   8      0.05266075           FALSE
+9   9      0.05185673           FALSE
+10 10      0.05120441           FALSE
+11 11      0.05066446           FALSE
+12 12      0.05021006           FALSE
+13 13      0.04982233            TRUE
+14 14      0.04948757            TRUE
 ...
 ```
 

@@ -27,10 +27,21 @@ The required monitoring duration (k*) is the smallest number of monitoring days 
 
 ## Modeling Framework
 
-The primary method assumes a random-intercept mixed-effects model:
+The primary method assumes a random-intercept mixed-effects model for estimating the population mean:
 
-* Daily observations are conditionally independent given participant-level random effects.
-* Correlation across days arises naturally through the participant random intercept.
+**y = μ + b + e**
+
+where:
+* **y** is the daily observation
+* **μ** is the population mean (fixed effect)
+* **b ~ N(0, σ²_b)** is the subject-specific random effect (between-person variability)
+* **e ~ N(0, σ²_w)** is the day-level random effect (within-person variability)
+
+Key assumptions:
+* Both b and e are random effects; b is subject-specific and constant across days within a participant
+* Daily observations are conditionally independent given the subject-specific random effect b
+* Correlation across days arises naturally through the shared subject-specific random effect
+* The model focuses on estimating the population mean without additional covariates
 
 The design rule assumes a planned study with equal monitoring days per participant. Estimated variance components from existing data are used to determine the required monitoring duration.
 
@@ -43,6 +54,71 @@ k_eff = k / design_effect
 ```
 
 This adjustment is most relevant for consecutive-day monitoring protocols.
+
+---
+
+## Estimating Variance Components from Pilot Data
+
+**Before using the main functions**, you must obtain variance component estimates from existing data (pilot study, published literature, or large observational cohort).
+
+### For Continuous Outcomes
+
+Fit a random-intercept model to your pilot data and extract variance components:
+
+```r
+library(lme4)
+
+# Fit random-intercept model: y = μ + b + e
+# This estimates the population mean (μ) without covariates
+fit <- lmer(outcome ~ 1 + (1 | participant_id), data = pilot_data)
+
+# Extract variance components
+vc <- as.data.frame(VarCorr(fit))
+sigma_b2 <- vc$vcov[1]  # Between-person variance (σ²_b)
+sigma_w2 <- vc$vcov[2]  # Within-person (residual) variance (σ²_w)
+
+# Display estimates
+print(paste("Between-person variance (σ²_b):", round(sigma_b2, 3)))
+print(paste("Within-person variance (σ²_w):", round(sigma_w2, 3)))
+```
+
+**Important notes:**
+* `outcome` should be the daily-level measurement variable
+* `participant_id` should be the participant identifier
+* The formula `outcome ~ 1 + (1 | participant_id)` estimates only the population mean (intercept) and random effects
+* Ensure your pilot data has multiple days per participant
+* The model should include any necessary transformations of the outcome
+
+### For Binary Outcomes
+
+Estimate the marginal prevalence and intraclass correlation:
+
+```r
+library(lme4)
+
+# Fit logistic random-intercept model
+fit_binary <- glmer(binary_outcome ~ (1 | participant_id), 
+                    data = pilot_data, 
+                    family = binomial)
+
+# Extract variance components
+sigma_b2_logit <- as.data.frame(VarCorr(fit_binary))$vcov[1]
+
+# Calculate ICC on probability scale
+# For logistic model: ρ ≈ σ²_b / (σ²_b + π²/3)
+rho <- sigma_b2_logit / (sigma_b2_logit + pi^2/3)
+
+# Calculate marginal prevalence
+mu <- mean(pilot_data$binary_outcome, na.rm = TRUE)
+
+# Display estimates
+print(paste("Marginal prevalence (μ):", round(mu, 3)))
+print(paste("Intraclass correlation (ρ):", round(rho, 3)))
+```
+
+### Using Published Estimates
+
+If pilot data are unavailable, you can use variance components from published literature in similar populations and measurement contexts. Ensure the measurement protocol and population characteristics are comparable to your planned study.
 
 ---
 
@@ -66,9 +142,9 @@ These simplified functions allow direct computation of k* when variance componen
 * **`h`**  
   Precision tolerance. Maximum acceptable half-width (margin of error) of a 95% confidence interval.
 * **`sigma_b2`**  
-  Between-person variance (σ²_b).
+  Between-person variance (σ²_b). Extract from `VarCorr()` output after fitting `lmer()` model.
 * **`sigma_w2`**  
-  Within-person variance (σ²_w).
+  Within-person variance (σ²_w). Extract from `VarCorr()` output after fitting `lmer()` model.
 * **`phi`** (default = 0)  
   Lag-1 autocorrelation. Set to 0 for independence, or provide estimated value from prior data/literature (typically 0.2-0.4 for EMA studies).
 * **`k_max`** (default = 14)  
@@ -82,9 +158,9 @@ These simplified functions allow direct computation of k* when variance componen
 * **`h`**  
   Precision tolerance. Maximum acceptable half-width (margin of error) of a 95% confidence interval.
 * **`mu`**  
-  Marginal prevalence/mean probability.
+  Marginal prevalence/mean probability. Calculate as `mean(binary_outcome)` from pilot data.
 * **`rho`**  
-  Intraclass correlation (ICC).
+  Intraclass correlation (ICC). Calculate from random-intercept logistic model (see example above).
 * **`phi`** (default = 0)  
   Lag-1 autocorrelation. Set to 0 for independence, or provide estimated value from prior data/literature.
 * **`k_max`** (default = 14)  
@@ -96,14 +172,23 @@ These simplified functions allow direct computation of k* when variance componen
 
 ## Example Usage
 
-### Example 1: Continuous Outcome (No Autocorrelation)
+### Example 1: Complete Workflow for Continuous Outcome (No Autocorrelation)
 
 ```r
+library(lme4)
+
+# Step 1: Estimate variance components from pilot data
+fit <- lmer(outcome ~ (1 | id), data = pilot_data)
+vc <- as.data.frame(VarCorr(fit))
+sigma_b2 <- vc$vcov[1]  # Between-person variance
+sigma_w2 <- vc$vcov[2]  # Within-person variance
+
+# Step 2: Determine required monitoring days for new study
 result_cont <- compute_k_star_continuous(
-  N = 200,
-  h = 0.5,
-  sigma_b2 = 1,
-  sigma_w2 = 1.9,
+  N = 100,
+  h = 0.2,
+  sigma_b2 = 0.5,
+  sigma_w2 = 1,
   phi = 0,
   k_max = 14
 )
@@ -140,6 +225,15 @@ Note: margin_of_error is the ±CI half-width achieved at each k.
 **Note:** `phi` can be estimated from pilot data using the `estimate_lag1_acf()` helper function (requires fitted model and data), obtained from published literature, or assumed based on typical values in EMA/accelerometry studies (0.2-0.4).
 
 ```r
+# Option A: Estimate autocorrelation from pilot data
+phi_est <- estimate_lag1_acf(
+  model = fit,
+  data = pilot_data,
+  id_var = "id",
+  day_var = "day"
+)
+
+# Option B: Or use literature value
 result_cont_adj <- compute_k_star_continuous(
   N = 200,
   h = 0.10,
@@ -171,16 +265,26 @@ Note: margin_of_error is the ±CI half-width achieved at each k.
 4   4      0.10830663           FALSE
 5   5      0.10353313           FALSE
 6   6      0.09998190            TRUE
-7   7      0.09723828            TRUE
-8   8      0.09505587            TRUE
 ...
 ```
 
 ---
 
-### Example 3: Binary Outcome
+### Example 3: Complete Workflow for Binary Outcome
 
 ```r
+library(lme4)
+
+# Step 1: Estimate parameters from pilot data
+fit_binary <- glmer(binary_outcome ~ (1 | id), 
+                    data = pilot_data, 
+                    family = binomial)
+
+sigma_b2_logit <- as.data.frame(VarCorr(fit_binary))$vcov[1]
+rho <- sigma_b2_logit / (sigma_b2_logit + pi^2/3)
+mu <- mean(pilot_data$binary_outcome, na.rm = TRUE)
+
+# Step 2: Determine required monitoring days
 result_bin <- compute_k_star_binary(
   N = 100,
   h = 0.05,
@@ -208,18 +312,9 @@ Note: margin_of_error is the ±CI half-width achieved at each k.
 1   1      0.08981848           FALSE
 2   2      0.07100775           FALSE
 3   3      0.06351126           FALSE
-4   4      0.05940934           FALSE
-5   5      0.05680620           FALSE
-6   6      0.05500236           FALSE
-7   7      0.05367681           FALSE
-8   8      0.05266075           FALSE
-9   9      0.05185673           FALSE
-10 10      0.05120441           FALSE
-11 11      0.05066446           FALSE
-12 12      0.05021006           FALSE
+...
 13 13      0.04982233            TRUE
 14 14      0.04948757            TRUE
-...
 ```
 
 ---
@@ -239,56 +334,6 @@ The function automatically prints:
 
 ---
 
-## Notes on Autocorrelation (phi)
-
-### What is phi?
-* Lag-1 autocorrelation between consecutive day residuals
-* Represents short-term persistence not captured by random intercepts
-* Typical range in EMA/accelerometry studies: 0.2 to 0.4
-* phi = 0 assumes conditional independence given random effects
-
-### How to specify phi
-
-**Option 1: Assume independence**  
-Set `phi = 0` (simplest approach, but may underestimate required days if autocorrelation exists)
-
-**Option 2: Use literature values**  
-Set `phi = 0.3` (reasonable middle-ground for most EMA/accelerometry data)
-
-**Option 3: Estimate from pilot data**  
-If you have existing data with a fitted model, use the `estimate_lag1_acf()` helper function:
-```r
-# Fit model to pilot data
-fit <- lmer(outcome ~ (1 | id), data = pilot_data)
-
-# Estimate phi
-phi_est <- estimate_lag1_acf(
-  model = fit,
-  data = pilot_data,
-  id_var = "id",
-  day_var = "day"
-)
-
-# Use in k* calculation
-result <- compute_k_star_continuous(
-  N = 100,
-  h = 0.10,
-  sigma_b2 = 0.5,
-  sigma_w2 = 1.0,
-  phi = phi_est
-)
-```
-
-**Option 4: Use domain knowledge**  
-Consult published studies in your research area for typical autocorrelation values
-
-### When autocorrelation matters
-* Higher phi values require more monitoring days to achieve the same precision
-* The effect is accounted for through AR(1) design effect adjustment
-* Most relevant for consecutive-day monitoring protocols
-* Less relevant for sampling designs with gaps between measurements
-
-
 
 ## Installation
 
@@ -303,16 +348,22 @@ source("compute_k_star_functions.R")
 
 If you use this code, please cite:
 
-Hong, H.G. & Matthews, C. (2026).  
+Hong, H.G. & Matthews, C. (in preparation).  
 *A Statistical Framework for Determining Monitoring Duration in Population Surveillance*
+
+Or cite this repository directly:
+```
+Hong, H.G. & Matthews, C. (2026). Precision-Based Monitoring Days [R code]. 
+https://github.com/[your-username]/[repo-name]
+```
 
 ---
 
 ## License
 
+[To be added]
 
-
-
+---
 
 ## Contact
 

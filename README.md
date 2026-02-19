@@ -1,3 +1,6 @@
+
+[![Back to Hub](https://img.shields.io/badge/⬅️%20Back%20to%20Hub-2962FF?style=for-the-badge)](https://github.com/younghhk/NCI)
+
 # Precision-Based Monitoring Days
 
 This repository provides an R implementation of a precision-based rule for determining the number of monitoring days required per participant to achieve a desired level of accuracy when estimating a population mean or prevalence.

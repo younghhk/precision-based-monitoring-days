@@ -357,7 +357,7 @@ Hong, H.G. & Matthews, C. (in preparation).
 Or cite this repository directly:
 ```
 Hong, H.G. & Matthews, C. (2026). Precision-Based Monitoring Days [R code]. 
-https://github.com/[your-username]/[repo-name]
+[https://github.com/younghhk/precision-based-monitoring-days](https://github.com/younghhk/precision-based-monitoring-days)
 ```
 
 ---

@@ -60,35 +60,6 @@ This adjustment is most relevant for consecutive-day monitoring protocols.
 
 ---
 
-### For Binary Outcomes
-
-Estimate the marginal prevalence and intraclass correlation:
-
-```r
-library(lme4)
-
-# Fit logistic random-intercept model
-fit_binary <- glmer(binary_outcome ~ (1 | participant_id), 
-                    data = pilot_data, 
-                    family = binomial)
-
-# Extract variance components
-sigma_b2_logit <- as.data.frame(VarCorr(fit_binary))$vcov[1]
-
-# Calculate ICC on probability scale
-# For logistic model: ρ ≈ σ²_b / (σ²_b + π²/3)
-rho <- sigma_b2_logit / (sigma_b2_logit + pi^2/3)
-
-# Calculate marginal prevalence
-mu <- mean(pilot_data$binary_outcome, na.rm = TRUE)
-
-# Display estimates
-print(paste("Marginal prevalence (μ):", round(mu, 3)))
-print(paste("Intraclass correlation (ρ):", round(rho, 3)))
-```
-
-
----
 
 ## Primary Functions
 
@@ -292,13 +263,6 @@ Each function returns a list containing:
 * **`k_star`** - Required number of monitoring days (or `NA` if not attainable within `k_max`)
 * Input parameters (N, h, variance components, etc.)
 * **`results`** - Data frame showing margin of error and whether tolerance is met for each k value
-
-The function automatically prints:
-* Summary of input parameters
-* Required monitoring days (k*)
-* Table showing margin of error at each k value
-* Indicator of which k values meet the precision tolerance
-
 ---
 
 

@@ -60,38 +60,6 @@ This adjustment is most relevant for consecutive-day monitoring protocols.
 
 ---
 
-## Estimating Variance Components from Pilot Data
-
-**Before using the main functions**, you must obtain variance component estimates from existing data (pilot study, published literature, or large observational cohort).
-
-### For Continuous Outcomes
-
-Fit a random-intercept model to your pilot data and extract variance components:
-
-```r
-library(lme4)
-
-# Fit random-intercept model: y = μ + b + e
-# This estimates the population mean (μ) without covariates
-fit <- lmer(outcome ~ 1 + (1 | participant_id), data = pilot_data)
-
-# Extract variance components
-vc <- as.data.frame(VarCorr(fit))
-sigma_b2 <- vc$vcov[1]  # Between-person variance (σ²_b)
-sigma_w2 <- vc$vcov[2]  # Within-person (residual) variance (σ²_w)
-
-# Display estimates
-print(paste("Between-person variance (σ²_b):", round(sigma_b2, 3)))
-print(paste("Within-person variance (σ²_w):", round(sigma_w2, 3)))
-```
-
-**Important notes:**
-* `outcome` should be the daily-level measurement variable
-* `participant_id` should be the participant identifier
-* The formula `outcome ~ 1 + (1 | participant_id)` estimates only the population mean (intercept) and random effects
-* Ensure your pilot data has multiple days per participant
-* The model should include any necessary transformations of the outcome
-
 ### For Binary Outcomes
 
 Estimate the marginal prevalence and intraclass correlation:
@@ -119,9 +87,6 @@ print(paste("Marginal prevalence (μ):", round(mu, 3)))
 print(paste("Intraclass correlation (ρ):", round(rho, 3)))
 ```
 
-### Using Published Estimates
-
-If pilot data are unavailable, you can use variance components from published literature in similar populations and measurement contexts. Ensure the measurement protocol and population characteristics are comparable to your planned study.
 
 ---
 
@@ -180,11 +145,15 @@ These simplified functions allow direct computation of k* when variance componen
 ```r
 library(lme4)
 
-# Step 1: Estimate variance components from pilot data
-fit <- lmer(outcome ~ (1 | id), data = pilot_data)
-vc <- as.data.frame(VarCorr(fit))
-sigma_b2 <- vc$vcov[1]  # Between-person variance
-sigma_w2 <- vc$vcov[2]  # Within-person variance
+# Step 1 (if needed): Estimate variance components from pilot data
+# Only required when sigma_b2 and sigma_w2 are not available
+# from prior studies or existing surveillance data.
+
+# library(lme4)
+# fit <- lmer(outcome ~ 1 + (1 | id), data = pilot_data)
+# vc <- VarCorr(fit)
+# sigma_b2 <- as.numeric(vc$id)        # Between-person variance
+# sigma_w2 <- attr(vc, "sc")^2         # Within-person variance
 
 # Step 2: Determine required monitoring days for new study
 result_cont <- compute_k_star_continuous(

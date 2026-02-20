@@ -284,7 +284,7 @@ Hong, H.G. & Matthews, C. (in preparation).
 
 Or cite this repository directly:
 ```
-Hong, H.G. & Matthews, C. (2026). Precision-Based Monitoring Days [R code]. 
+Hong, H.G. & Matthews, C. (2026). Precision-Based Monitoring Duration for Population Surveillance [R code]. 
 [https://github.com/younghhk/precision-based-monitoring-days](https://github.com/younghhk/precision-based-monitoring-days)
 ```
 

@@ -1,5 +1,5 @@
 # ==============================================================
-# Simplified Precision-Based Monitoring Days Calculator
+# Precision-Based Monitoring Days Calculator
 # Direct computation with known parameters
 # ==============================================================
 
@@ -18,7 +18,7 @@ k_eff_ar1 <- function(k, phi) {
 }
 
 # --------------------------------------------------------------
-# Simplified Main Function for Continuous Outcomes
+# Main Function for Continuous Outcomes
 # --------------------------------------------------------------
 
 compute_k_star_continuous <- function(
@@ -81,7 +81,7 @@ compute_k_star_continuous <- function(
 }
 
 # --------------------------------------------------------------
-# Simplified Main Function for Binary Outcomes
+# Main Function for Binary Outcomes
 # --------------------------------------------------------------
 
 compute_k_star_binary <- function(

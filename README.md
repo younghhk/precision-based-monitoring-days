@@ -245,16 +245,16 @@ Note: margin_of_error is the ±CI half-width achieved at each k.
 ### Example 3: Complete Workflow for Binary Outcome
 
 ```r
-library(lme4)
-
-# Step 1: Estimate parameters from pilot data
-fit_binary <- glmer(binary_outcome ~ (1 | id), 
-                    data = pilot_data, 
-                    family = binomial)
-
-sigma_b2_logit <- as.data.frame(VarCorr(fit_binary))$vcov[1]
-rho <- sigma_b2_logit / (sigma_b2_logit + pi^2/3)
-mu <- mean(pilot_data$binary_outcome, na.rm = TRUE)
+# Step 1 (if needed): Estimate prevalence (mu) and within-person correlation (rho)
+# Only required if mu and rho are not available from prior data.
+#library(lme4)
+#fit_binary <- glmer(binary_outcome ~ 1 + (1 | id),
+#                    data = pilot_data,
+#                    family = binomial)
+# Extract random intercept variance on logit scale
+# sigma_b2_logit <- as.numeric(VarCorr(fit_binary)$id)
+#rho <- sigma_b2_logit / (sigma_b2_logit + (pi^2 / 3))
+# mu <- mean(pilot_data$binary_outcome, na.rm = TRUE)
 
 # Step 2: Determine required monitoring days
 result_bin <- compute_k_star_binary(

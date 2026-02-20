@@ -143,11 +143,9 @@ These simplified functions allow direct computation of k* when variance componen
 ### Example 1: Complete Workflow for Continuous Outcome (No Autocorrelation)
 
 ```r
-library(lme4)
-
-# Step 1 (if needed): Estimate variance components from pilot data
-# Only required when sigma_b2 and sigma_w2 are not available
-# from prior studies or existing surveillance data.
+## Step 1 (if needed): Estimate variance components from pilot data
+## Only required when sigma_b2 and sigma_w2 are not available
+## from prior studies or existing surveillance data.
 
 # library(lme4)
 # fit <- lmer(outcome ~ 1 + (1 | id), data = pilot_data)
@@ -155,7 +153,7 @@ library(lme4)
 # sigma_b2 <- as.numeric(vc$id)        # Between-person variance
 # sigma_w2 <- attr(vc, "sc")^2         # Within-person variance
 
-# Step 2: Determine required monitoring days for new study
+## Step 2: Determine required monitoring days for new study
 result_cont <- compute_k_star_continuous(
   N = 100,
   h = 0.2,
@@ -194,24 +192,21 @@ Note: margin_of_error is the ±CI half-width achieved at each k.
 
 ### Example 2: Continuous Outcome with Autocorrelation
 
-**Note:** `phi` can be estimated from pilot data using the `estimate_lag1_acf()` helper function (requires fitted model and data), obtained from published literature, or assumed based on typical values in EMA/accelerometry studies (0.2-0.4).
-
 ```r
-# Option A: Estimate autocorrelation from pilot data
-phi_est <- estimate_lag1_acf(
-  model = fit,
-  data = pilot_data,
-  id_var = "id",
-  day_var = "day"
-)
-
-# Option B: Or use literature value
+## If phi is unknown, estimate lag-1 autocorrelation from pilot data
+# phi_est <- estimate_lag1_acf(
+# model = fit,
+# data = pilot_data,
+# id_var = "id",
+# day_var = "day"
+# )
+## If phi is known (e.g., from pilot data or prior literature), compute k*
 result_cont_adj <- compute_k_star_continuous(
   N = 200,
   h = 0.10,
   sigma_b2 = 0.3,
   sigma_w2 = 0.8,
-  phi = 0.3,  # Estimated from pilot data or literature
+  phi = 0.3,
   k_max = 14
 )
 ```
@@ -245,18 +240,18 @@ Note: margin_of_error is the ±CI half-width achieved at each k.
 ### Example 3: Complete Workflow for Binary Outcome
 
 ```r
-# Step 1 (if needed): Estimate prevalence (mu) and within-person correlation (rho)
-# Only required if mu and rho are not available from prior data.
-#library(lme4)
-#fit_binary <- glmer(binary_outcome ~ 1 + (1 | id),
+## Step 1 (if needed): Estimate prevalence (mu) and within-person correlation (rho)
+## Only required if mu and rho are not available from prior data.
+# library(lme4)
+# fit_binary <- glmer(binary_outcome ~ 1 + (1 | id),
 #                    data = pilot_data,
 #                    family = binomial)
 # Extract random intercept variance on logit scale
 # sigma_b2_logit <- as.numeric(VarCorr(fit_binary)$id)
-#rho <- sigma_b2_logit / (sigma_b2_logit + (pi^2 / 3))
+# rho <- sigma_b2_logit / (sigma_b2_logit + (pi^2 / 3))
 # mu <- mean(pilot_data$binary_outcome, na.rm = TRUE)
 
-# Step 2: Determine required monitoring days
+## Step 2: Determine required monitoring days
 result_bin <- compute_k_star_binary(
   N = 100,
   h = 0.05,

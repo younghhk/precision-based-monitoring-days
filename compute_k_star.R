@@ -81,31 +81,23 @@ compute_k_star_continuous <- function(
 }
 
 # --------------------------------------------------------------
-# Main Function for Binary Outcomes
+# Main Function for Binary Outcomes (Updated)
 # --------------------------------------------------------------
 
 compute_k_star_binary <- function(
     N,                    # Sample size
     h,                    # Tolerance (desired margin of error)
-    mu,                  # Marginal prevalence/mean
-    rho,                 # Intraclass correlation
-    phi = 0,             # Lag-1 autocorrelation (default = 0)
-    k_max = 14,          # Maximum days to check
-    z = 1.96             # Z-value for CI (default 95% CI)
+    mu,                   # Marginal prevalence/mean
+    rho,                  # Intraclass correlation
+    k_max = 14,           # Maximum days to check
+    z = 1.96              # Z-value for CI (default 95% CI)
 ) {
   
   k_vals <- seq_len(k_max)
   
-  # Adjust for autocorrelation if phi != 0
-  k_eff <- if (phi != 0) {
-    sapply(k_vals, k_eff_ar1, phi = phi)
-  } else {
-    k_vals
-  }
-  
-  # Compute margin of error for each k
+  # Compute margin of error for each k 
   margin_of_error <- z * sqrt(
-    (mu * (1 - mu) / N) * (rho + (1 - rho) / k_eff)
+    (mu * (1 - mu) / N) * (rho + (1 - rho) / k_vals)
   )
   
   # Find minimum k that meets tolerance
@@ -125,7 +117,6 @@ compute_k_star_binary <- function(
   cat("Desired precision (h):", h, "\n")
   cat("Marginal prevalence (μ):", mu, "\n")
   cat("Intraclass correlation (ρ):", rho, "\n")
-  if (phi != 0) cat("Lag-1 autocorrelation (φ):", phi, "\n")
   cat("\nRequired monitoring days (k*):", 
       ifelse(is.na(k_star), "Not attainable within k_max", k_star), "\n")
   cat("\nNote: margin_of_error is the ±CI half-width achieved at each k.\n")
@@ -140,7 +131,7 @@ compute_k_star_binary <- function(
     h = h,
     mu = mu,
     rho = rho,
-    phi = phi,
     results = results_table
   ))
 }
+
